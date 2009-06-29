@@ -1,0 +1,1 @@
+Taken from http://code.google.com/p/erlang-mysql-driver/ SVN; revision 33
