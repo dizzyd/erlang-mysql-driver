@@ -172,6 +172,8 @@ bxor_binary(B1, B2) ->
 				   E1 bxor E2
 			   end, binary_to_list(B1), binary_to_list(B2))).
 
+password_new([], _Salt) ->
+    <<>>;
 password_new(Password, Salt) ->
     Stage1 = crypto:sha(Password),
     Stage2 = crypto:sha(Stage1),
