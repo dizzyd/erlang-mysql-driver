@@ -166,6 +166,13 @@ post_start(Pid, LogFun) ->
 	    {ok, Pid};
 	{mysql_conn, Pid, {error, Reason}} ->
 	    {error, Reason};
+	{mysql_conn, OtherPid, {error, Reason}} ->
+	    % Ignore error message from other processes. This handles the case
+	    % when mysql is shutdown and takes more than 5 secs to close the
+	    % listener socket.
+	    ?Log2(LogFun, debug, "Ignoring message from process ~p | Reason: ~p",
+		  [OtherPid, Reason]),
+	    post_start(Pid, LogFun);
 	Unknown ->
 	    ?Log2(LogFun, error,
 		 "received unknown signal, exiting: ~p", [Unknown]),
