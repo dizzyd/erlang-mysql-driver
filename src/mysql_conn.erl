@@ -655,11 +655,12 @@ asciz(Data) when list(Data) ->
 %%--------------------------------------------------------------------
 get_query_response(LogFun, RecvPid, Version) ->
     case do_recv(LogFun, RecvPid, undefined) of
-	{ok, <<Fieldcount:8, Rest/binary>>, _} ->
+	{ok, Packet, _} ->
+	    {Fieldcount, Rest} = get_lcb(Packet),
 	    case Fieldcount of
 		0 ->
 		    %% No Tabular data
-		    <<AffectedRows:8, _Rest2/binary>> = Rest,
+		    {AffectedRows, Rest2} = get_lcb(Rest),
 		    {updated, #mysql_result{affectedrows=AffectedRows}};
 		255 ->
 		    <<_Code:16/little, Message/binary>>  = Rest,
@@ -794,17 +795,22 @@ get_row([Field | OtherFields], Data, Res) ->
 	   end,
     get_row(OtherFields, Rest, [This | Res]).
 
-get_with_length(<<251:8, Rest/binary>>) ->
-    {null, Rest};
-get_with_length(<<252:8, Length:16/little, Rest/binary>>) ->
-    split_binary(Rest, Length);
-get_with_length(<<253:8, Length:24/little, Rest/binary>>) ->
-    split_binary(Rest, Length);
-get_with_length(<<254:8, Length:64/little, Rest/binary>>) ->
-    split_binary(Rest, Length);
-get_with_length(<<Length:8, Rest/binary>>) when Length < 251 ->
+get_with_length(Bin) when is_binary(Bin) ->
+    {Length, Rest} = get_lcb(Bin),
     split_binary(Rest, Length).
 
+get_lcb(<<251:8, Rest/binary>>) ->
+    {null, Rest};
+get_lcb(<<252:8, Value:16/little, Rest/binary>>) ->
+    {Value, Rest};
+get_lcb(<<253:8, Value:24/little, Rest/binary>>) ->
+    {Value, Rest};
+get_lcb(<<254:8, Value:32/little, Rest/binary>>) ->
+    {Value, Rest};
+get_lcb(<<Value:8, Rest/binary>>) when Value < 251 ->
+    {Value, Rest};
+get_lcb(<<255:8, Rest/binary>>) ->
+    {255, Rest}.
 
 %%--------------------------------------------------------------------
 %% Function: do_send(Sock, Packet, SeqNum, LogFun)
