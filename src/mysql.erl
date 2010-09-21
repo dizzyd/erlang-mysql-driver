@@ -111,6 +111,7 @@
 	 get_result_rows/1,
 	 get_result_affected_rows/1,
 	 get_result_reason/1,
+	 get_result_insert_id/1,
 
 	 encode/1,
 	 encode/2,
@@ -482,6 +483,14 @@ get_result_affected_rows(#mysql_result{affectedrows=AffectedRows}) ->
 %%    Reason::string()
 get_result_reason(#mysql_result{error=Reason}) ->
     Reason.
+
+%% @doc Extract the Insert Id from MySQL Result on update
+%%
+%% @spec get_result_insert_id(MySQLRes::mysql_result()) ->
+%%           InsertId::integer()
+get_result_insert_id(#mysql_result{insertid=InsertId}) ->
+    InsertId.
+
 
 connect(PoolId, Host, undefined, User, Password, Database, Reconnect) ->
     connect(PoolId, Host, ?PORT, User, Password, Database, undefined,

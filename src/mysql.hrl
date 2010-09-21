@@ -3,4 +3,5 @@
 	{fieldinfo=[],
 	 rows=[],
 	 affectedrows=0,
+	 insertid=0,
 	 error=""}).

@@ -661,7 +661,8 @@ get_query_response(LogFun, RecvPid, Version) ->
 		0 ->
 		    %% No Tabular data
 		    {AffectedRows, Rest2} = get_lcb(Rest),
-		    {updated, #mysql_result{affectedrows=AffectedRows}};
+		    {InsertId, _} = get_lcb(Rest2),
+		    {updated, #mysql_result{affectedrows=AffectedRows, insertid=InsertId}};
 		255 ->
 		    <<_Code:16/little, Message/binary>>  = Rest,
 		    {error, #mysql_result{error=Message}};
