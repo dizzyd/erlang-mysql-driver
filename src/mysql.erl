@@ -72,7 +72,7 @@
 
 
 %% @type mysql_result() = term()
-%% @type query_result = {data, mysql_result()} | {updated, mysql_result()} |
+%% @type query_result() = {data, mysql_result()} | {updated, mysql_result()} |
 %%   {error, mysql_result()}
 
 
@@ -194,17 +194,23 @@ log(Module, Line, _Level, FormatFun) ->
 %%
 %% The Port and LogFun parameters are optional.
 %%
-%% @spec start_link(PoolId::atom(), Host::string(), Port::integer(),
-%%   Username::string(), Password::string(), Database::string(),
-%%   LogFun::undefined | function() of arity 4) ->
+%% @spec start_link(PoolId::atom(), Host::string(),
+%%   Username::string(), Password::string(), Database::string()) ->
 %%     {ok, Pid} | ignore | {error, Err}
 start_link(PoolId, Host, User, Password, Database) ->
     start_link(PoolId, Host, ?PORT, User, Password, Database).
 
+%% @spec start_link(PoolId::atom(), Host::string(), Port::integer(),
+%%   Username::string(), Password::string(), Database::string()) ->
+%%     {ok, Pid} | ignore | {error, Err}
 start_link(PoolId, Host, Port, User, Password, Database) ->
     start_link(PoolId, Host, Port, User, Password, Database, undefined,
 	       undefined).
 
+%% @spec start_link(PoolId::atom(), Host::string(), Port::integer(),
+%%   Username::string(), Password::string(), Database::string(),
+%%   LogFun::undefined | function()) ->
+%%     {ok, Pid} | ignore | {error, Err}
 start_link(PoolId, Host, undefined, User, Password, Database, LogFun) ->
     start_link(PoolId, Host, ?PORT, User, Password, Database, LogFun,
 	       undefined);
@@ -322,11 +328,13 @@ fetch(Query) ->
 %%   for the result. If this function is called inside a transaction,
 %%   the PoolId parameter is ignored.
 %%
-%% @spec fetch(PoolId::atom(), Query::iolist(), Timeout::integer()) ->
+%% @spec fetch(PoolId::atom(), Query::iolist()) ->
 %%   query_result()
 fetch(PoolId, Query) ->
     fetch(PoolId, Query, undefined).
 
+%% @spec fetch(PoolId::atom(), Query::iolist(), Timeout::integer()) ->
+%%   query_result()
 fetch(PoolId, Query, Timeout) -> 
     case get(?STATE_VAR) of
 	undefined ->
@@ -368,20 +376,24 @@ unprepare(Name) ->
 %%  parameter, the return value is {ok, latest}. This saves the cost
 %%  of sending the query when the connection already has the latest version.
 %%
-%% @spec get_prepared(Name::atom(), Version::integer()) ->
+%% @spec get_prepared(Name::atom()) ->
 %%   {ok, latest} | {ok, Statement::binary()} | {error, Err}
 get_prepared(Name) ->
     get_prepared(Name, undefined).
+
+%% @spec get_prepared(Name::atom(), Version::integer()) ->
+%%   {ok, latest} | {ok, Statement::binary()} | {error, Err}
 get_prepared(Name, Version) ->
     gen_server:call(?SERVER, {get_prepared, Name, Version}).
 
 
 %% @doc Execute a query inside a transaction.
 %%
-%% @spec execute(Name::atom, Params::[term()]) -> mysql_result()
+%% @spec execute(Name::atom) -> mysql_result()
 execute(Name) ->
     execute(Name, []).
 
+%% @spec execute(Name::atom, Params::[term()]) -> mysql_result()
 execute(Name, Params) when is_atom(Name), is_list(Params) ->
     case get(?STATE_VAR) of
 	undefined ->
@@ -782,10 +794,13 @@ reconnect_loop(Conn, LogFun, N) ->
 
 %% @doc Encode a value so that it can be included safely in a MySQL query.
 %%
-%% @spec encode(Val::term(), AsBinary::bool()) ->
+%% @spec encode(Val::term()) ->
 %%   string() | binary() | {error, Error}
 encode(Val) ->
     encode(Val, false).
+
+%% @spec encode(Val::term(), AsBinary::bool()) ->
+%%   string() | binary() | {error, Error}
 encode(Val, false) when Val == undefined; Val == null ->
     "null";
 encode(Val, true) when Val == undefined; Val == null ->
