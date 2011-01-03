@@ -354,8 +354,8 @@ init(Host, Port, User, Password, Database, LogFun, Encoding, PoolId, Parent) ->
 					  },
 			    loop(State)
 		    end;
-		{error, _Reason} ->
-		    Parent ! {mysql_conn, self(), {error, login_failed}}
+		{error, Reason} ->
+			Parent ! {mysql_conn, self(), {error, Reason}}
 	    end;
 	E ->
 	    ?Log2(LogFun, error,
@@ -582,7 +582,10 @@ atom_to_binary(Val) ->
 mysql_init(Sock, RecvPid, User, Password, LogFun) ->
     case do_recv(LogFun, RecvPid, undefined) of
 	{ok, Packet, InitSeqNum} ->
-	    {Version, Salt1, Salt2, Caps} = greeting(Packet, LogFun),
+		case greeting(Packet, LogFun) of
+		{error, Reason} ->
+			{error, Reason} ;
+		{ok, Version, Salt1, Salt2, Caps} ->
 	    AuthRes =
 		case Caps band ?SECURE_CONNECTION of
 		    ?SECURE_CONNECTION ->
@@ -610,12 +613,16 @@ mysql_init(Sock, RecvPid, User, Password, LogFun) ->
 		    ?Log2(LogFun, error,
 			  "init failed receiving data : ~p", [Reason]),
 		    {error, Reason}
+			end
 	    end;
 	{error, Reason} ->
 	    {error, Reason}
     end.
 
 %% part of mysql_init/4
+greeting(<<255:8, ErrCode:16/little, ErrMessage/binary>>, LogFun) ->
+	?Log2(LogFun, error, "init failed ~p: ~p", [ErrCode, binary_to_list(ErrMessage)]),
+	{error, binary_to_list(ErrMessage)} ;
 greeting(Packet, LogFun) ->
     <<Protocol:8, Rest/binary>> = Packet,
     {Version, Rest2} = asciz(Rest),
@@ -628,7 +635,7 @@ greeting(Packet, LogFun) ->
 	  "greeting version ~p (protocol ~p) salt ~p caps ~p serverchar ~p"
 	  "salt2 ~p",
 	  [Version, Protocol, Salt, Caps, ServerChar, Salt2]),
-    {normalize_version(Version, LogFun), Salt, Salt2, Caps}.
+	{ok, normalize_version(Version, LogFun), Salt, Salt2, Caps}.
 
 %% part of greeting/2
 asciz(Data) when is_binary(Data) ->
@@ -797,8 +804,10 @@ get_row([Field | OtherFields], Data, Res) ->
     get_row(OtherFields, Rest, [This | Res]).
 
 get_with_length(Bin) when is_binary(Bin) ->
-    {Length, Rest} = get_lcb(Bin),
-    split_binary(Rest, Length).
+    case get_lcb(Bin) of
+    {null, Rest} -> {null, Rest};
+    {Length, Rest} -> split_binary(Rest, Length)
+    end.
 
 get_lcb(<<251:8, Rest/binary>>) ->
     {null, Rest};
