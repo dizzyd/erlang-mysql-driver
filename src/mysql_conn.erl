@@ -800,6 +800,7 @@ get_with_length(Bin) when is_binary(Bin) ->
     {Length, Rest} = get_lcb(Bin),
     split_binary(Rest, Length).
 
+
 get_lcb(<<251:8, Rest/binary>>) ->
     {null, Rest};
 get_lcb(<<252:8, Value:16/little, Rest/binary>>) ->
