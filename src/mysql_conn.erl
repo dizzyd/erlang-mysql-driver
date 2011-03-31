@@ -798,7 +798,11 @@ get_row([Field | OtherFields], Data, Res) ->
 
 get_with_length(Bin) when is_binary(Bin) ->
     {Length, Rest} = get_lcb(Bin),
-    split_binary(Rest, Length).
+    case get_lcb(Bin) of 
+    	 {null, Rest} -> {null, Rest};
+    	 _ -> split_binary(Rest, Length)
+    end.
+
 
 
 get_lcb(<<251:8, Rest/binary>>) ->
