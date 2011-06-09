@@ -175,8 +175,8 @@ post_start(Pid, LogFun) ->
 	    post_start(Pid, LogFun);
 	Unknown ->
 	    ?Log2(LogFun, error,
-		 "received unknown signal, exiting: ~p", [Unknown]),
-	    {error, "unknown signal received"}
+		 "received unknown signal: ~p", [Unknown]),
+		 post_start(Pid, LogFun)
     after 5000 ->
 	    {error, "timed out"}
     end.
