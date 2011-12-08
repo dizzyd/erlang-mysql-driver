@@ -16,7 +16,7 @@
 %%% Modified: 23 Sep 2006 by Yariv Sadan <yarivvv@gmail.com>
 %%% Added transaction handling and prepared statement execution.
 %%%
-%%% Copyright (c) 2001-2004 Kungliga Tekniska Högskolan
+%%% Copyright (c) 2001-2004 Kungliga Tekniska Hï¿½gskolan
 %%% See the file COPYING
 %%%
 %%%
@@ -276,7 +276,7 @@ do_recv(LogFun, RecvPid, SeqNum) when is_function(LogFun);
         {mysql_recv, RecvPid, data, Packet, ResponseNum} ->
 	    {ok, Packet, ResponseNum};
 	{mysql_recv, RecvPid, closed, _E} ->
-	    {error, io_lib:format("mysql_recv: socket was closed", [_E])}
+	    {error, io_lib:format("mysql_recv: socket was closed ~p", [_E])}
     end.
 
 do_fetch(Pid, Queries, From, Timeout) ->
