@@ -512,8 +512,9 @@ do_execute(State, Name, Params, ExpectedVersion) ->
 
 prepare_and_exec(State, Name, Version, Stmt, Params) ->
     NameBin = atom_to_binary(Name),
+    StmtEscaped = binary:replace(Stmt,<<"'">>,<<"\\'">>,[global]),
     StmtBin = <<"PREPARE ", NameBin/binary, " FROM '",
-		Stmt/binary, "'">>,
+		StmtEscaped/binary, "'">>,
     case do_query(State, StmtBin) of
 	{updated, _} ->
 	    State1 =
