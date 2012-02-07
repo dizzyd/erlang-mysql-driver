@@ -774,6 +774,9 @@ get_rows(Fields, LogFun, RecvPid, Res) ->
     case do_recv(LogFun, RecvPid, undefined) of
 	{ok, Packet, _Num} ->
 	    case Packet of
+		<<255:8, Rest/binary>> ->
+		    <<_Code:16/little, Message/binary>>  = Rest,
+		    {error, Message};
 		<<254:8, Rest/binary>> when size(Rest) < 8 ->
 		    {ok, lists:reverse(Res)};
 		_ ->
@@ -798,10 +801,9 @@ get_row([Field | OtherFields], Data, Res) ->
     get_row(OtherFields, Rest, [This | Res]).
 
 get_with_length(Bin) when is_binary(Bin) ->
-    {Length, Rest} = get_lcb(Bin),
     case get_lcb(Bin) of 
     	 {null, Rest} -> {null, Rest};
-    	 _ -> split_binary(Rest, Length)
+    	 {Length, Rest} -> split_binary(Rest, Length)
     end.
 
 
