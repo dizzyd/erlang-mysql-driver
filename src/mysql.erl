@@ -507,7 +507,7 @@ init([PoolId, Host, Port, User, Password, Database, LogFun, Encoding]) ->
 			    Database, Encoding),
 	    State = #state{log_fun = LogFun1},
 	    {ok, add_conn(Conn, State)};
-	{error, Reason} ->
+	{error, _Reason} ->
 	    ?Log(LogFun1, error,
 		 "failed starting first MySQL connection handler, "
 		 "exiting"),
