@@ -597,10 +597,11 @@ mysql_init(Sock, RecvPid, User, Password, LogFun) ->
 	    case AuthRes of
 		{ok, <<0:8, _Rest/binary>>, _RecvNum} ->
 		    {ok,Version};
-		{ok, <<255:8, Code:16/little, Message/binary>>, _RecvNum} ->
+		{ok, <<255:8, Rest/binary>>, _RecvNum} ->
+		    {Code, ErrData} = get_error_data(Rest, Version),
 		    ?Log2(LogFun, error, "init error ~p: ~p",
-			 [Code, binary_to_list(Message)]),
-		    {error, binary_to_list(Message)};
+			 [Code, ErrData]),
+		    {error, ErrData};
 		{ok, RecvPacket, _RecvNum} ->
 		    ?Log2(LogFun, error,
 			  "init unknown error ~p",
@@ -664,18 +665,34 @@ get_query_response(LogFun, RecvPid, Version) ->
 		    {InsertId, _} = get_lcb(Rest2),
 		    {updated, #mysql_result{affectedrows=AffectedRows, insertid=InsertId}};
 		255 ->
-		    <<_Code:16/little, Message/binary>>  = Rest,
-		    {error, #mysql_result{error=Message}};
+		    case get_error_data(Rest, Version) of
+			{Code, {SqlState, Message}} ->	 
+			    % MYSQL_4_1 error data
+			    {error, #mysql_result{error=Message, 
+						  errcode=Code,
+						  errsqlstate=SqlState}};
+			{Code, Message} -> 
+	   		    % MYSQL_4_0 error data
+			    {error, #mysql_result{error=Message,
+						  errcode=Code}}
+		    end;
 		_ ->
 		    %% Tabular data received
 		    case get_fields(LogFun, RecvPid, [], Version) of
 			{ok, Fields} ->
-			    case get_rows(Fields, LogFun, RecvPid, []) of
+			    case get_rows(Fields, LogFun, RecvPid, [], Version) of
 				{ok, Rows} ->
 				    {data, #mysql_result{fieldinfo=Fields,
 							 rows=Rows}};
-				{error, Reason} ->
-				    {error, #mysql_result{error=Reason}}
+				{error, {Code, {SqlState, Message}}} ->	 
+				    % MYSQL_4_1 error data
+				    {error, #mysql_result{error=Message, 
+							  errcode=Code,
+							  errsqlstate=SqlState}};
+				{error, {Code, Message}} -> 
+				    % MYSQL_4_0 error data
+				    {error, #mysql_result{error=Message,
+							  errcode=Code}}
 			    end;
 			{error, Reason} ->
 			    {error, #mysql_result{error=Reason}}
@@ -760,24 +777,28 @@ get_fields(LogFun, RecvPid, Res, ?MYSQL_4_1) ->
     end.
 
 %%--------------------------------------------------------------------
-%% Function: get_rows(N, LogFun, RecvPid, [])
+%% Function: get_rows(N, LogFun, RecvPid, [], Version)
 %%           N       = integer(), number of rows to get
 %%           LogFun  = undefined | function() with arity 3
 %%           RecvPid = pid(), mysql_recv process
+%%           Version = integer(), Representing MySQL version used
 %% Descrip.: Receive and decode a number of rows.
 %% Returns : {ok, Rows} |
 %%           {error, Reason}
 %%           Rows = list() of [string()]
 %%--------------------------------------------------------------------
-get_rows(Fields, LogFun, RecvPid, Res) ->
+get_rows(Fields, LogFun, RecvPid, Res, Version) ->
     case do_recv(LogFun, RecvPid, undefined) of
 	{ok, Packet, _Num} ->
 	    case Packet of
 		<<254:8, Rest/binary>> when size(Rest) < 8 ->
 		    {ok, lists:reverse(Res)};
+		<<255:8, Rest/binary>> ->
+		    {Code, ErrData} = get_error_data(Rest, Version),		    
+		    {error, {Code, ErrData}};
 		_ ->
 		    {ok, This} = get_row(Fields, Packet, []),
-		    get_rows(Fields, LogFun, RecvPid, [This | Res])
+		    get_rows(Fields, LogFun, RecvPid, [This | Res], Version)
 	    end;
 	{error, Reason} ->
 	    {error, Reason}
@@ -854,7 +875,7 @@ normalize_version(_Other, LogFun) ->
     ?MYSQL_4_0.
 
 %%--------------------------------------------------------------------
-%% Function: get_field_datatype(DataType)
+% Function: get_field_datatype(DataType)
 %%           DataType = integer(), MySQL datatype
 %% Descrip.: Return MySQL field datatype as description string
 %% Returns : String, MySQL datatype
@@ -923,3 +944,10 @@ convert_type(Val, ColType) ->
 	    Val
     end.
 	    
+get_error_data(ErrPacket, ?MYSQL_4_0) ->
+    <<Code:16/little, Message/binary>> = ErrPacket,
+    {Code, binary_to_list(Message)};
+get_error_data(ErrPacket, ?MYSQL_4_1) ->
+    <<Code:16/little, _M:8, SqlState:5/binary, Message/binary>> = ErrPacket,
+    {Code, {binary_to_list(SqlState), binary_to_list(Message)}}.
+    

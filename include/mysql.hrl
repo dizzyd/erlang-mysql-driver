@@ -4,4 +4,6 @@
 	 rows=[],
 	 affectedrows=0,
 	 insertid=0,
-	 error=""}).
+	 error="",
+	 errcode=0,
+	 errsqlstate=""}).
