@@ -60,7 +60,10 @@
 %%%         with Affected  = integer()
 %%%     - on error:
 %%%          Reason    = mysql:get_result_reason(MysqlRes)
-%%%         with Reason    = string()
+%%%          ErrCode   = mysql:get_result_err_code(MysqlRes)
+%%%          ErrSqlState   = mysql:get_result_err_sql_state(MysqlRes)
+%%%         with Reason and ErrSqlState = string()
+%%%          and ErrCode = integer()
 %%% 
 %%% If you just want a single MySQL connection, or want to manage your
 %%% connections yourself, you can use the mysql_conn module as a
@@ -111,6 +114,8 @@
 	 get_result_rows/1,
 	 get_result_affected_rows/1,
 	 get_result_reason/1,
+	 get_result_err_code/1,
+	 get_result_err_sql_state/1,
 	 get_result_insert_id/1,
 
 	 encode/1,
@@ -483,6 +488,20 @@ get_result_affected_rows(#mysql_result{affectedrows=AffectedRows}) ->
 %%    Reason::string()
 get_result_reason(#mysql_result{error=Reason}) ->
     Reason.
+
+%% @doc Extract the error ErrCode from MySQL Result on error
+%%
+%% @spec get_result_err_code(MySQLRes::mysql_result()) ->
+%%    ErrCode::integer()
+get_result_err_code(#mysql_result{errcode=ErrCode}) ->
+    ErrCode.
+
+%% @doc Extract the error ErrSqlState from MySQL Result on error
+%%
+%% @spec get_result_err_sql_state(MySQLRes::mysql_result()) ->
+%%    ErrSqlState::string()
+get_result_err_sql_state(#mysql_result{errsqlstate=ErrSqlState}) ->
+    ErrSqlState.
 
 %% @doc Extract the Insert Id from MySQL Result on update
 %%
