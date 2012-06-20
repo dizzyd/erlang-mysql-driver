@@ -323,7 +323,7 @@ init(Host, Port, User, Password, Database, LogFun, Encoding, PoolId, Parent) ->
 		{ok, Version} ->
 		    Db = iolist_to_binary(Database),
 		    case do_query(Sock, RecvPid, LogFun,
-				  <<"use ", Db/binary>>,
+				  <<"use `", Db/binary, "`">>,
 				  Version) of
 			{error, MySQLRes} ->
 			    ?Log2(LogFun, error,
