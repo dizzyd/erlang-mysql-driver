@@ -80,7 +80,10 @@
 
 
 %% External exports
--export([start_link/5,
+-export([
+    start_link/0,
+    start_link/1,
+    start_link/5,
 	 start_link/6,
 	 start_link/7,
 	 start_link/8,
@@ -93,6 +96,7 @@
 	 connect/7,
 	 connect/8,
 	 connect/9,
+    close/1,
 
 	 fetch/1,
 	 fetch/2,
@@ -203,6 +207,13 @@ log(Module, Line, _Level, FormatFun) ->
 %%   Username::string(), Password::string(), Database::string(),
 %%   LogFun::undefined | function() of arity 4) ->
 %%     {ok, Pid} | ignore | {error, Err}
+start_link() ->
+   start_link(undefined).
+
+start_link(LogFun) ->
+   crypto:start(),
+   gen_server:start_link({local, ?SERVER}, ?MODULE, [LogFun], []).
+
 start_link(PoolId, Host, User, Password, Database) ->
     start_link(PoolId, Host, ?PORT, User, Password, Database).
 
@@ -311,6 +322,11 @@ new_conn(PoolId, ConnPid, Reconnect, Host, Port, User, Password, Database,
 		  pid = ConnPid,
 		  reconnect = false}
     end.
+
+%%
+%%
+close(PoolId) ->
+   gen_server:call(?SERVER, {close_conn, PoolId}).
 
 %% @doc Fetch a query inside a transaction.
 %%
@@ -517,6 +533,10 @@ connect(PoolId, Host, undefined, User, Password, Database, Reconnect) ->
 
 %% gen_server callbacks
 
+init([LogFun]) ->
+   LogFun1 = if LogFun == undefined -> fun log/4; true -> LogFun end,
+   {ok, #state{log_fun = LogFun1}};
+
 init([PoolId, Host, Port, User, Password, Database, LogFun, Encoding]) ->
     LogFun1 = if LogFun == undefined -> fun log/4; true -> LogFun end,
     case mysql_conn:start(Host, Port, User, Password, Database, LogFun1,
@@ -585,6 +605,14 @@ handle_call({add_conn, Conn}, _From, State) ->
 	  "added connection with id '~p' (pid ~p) to my list",
 	  [PoolId, ConnPid]),
     {reply, ok, NewState};
+
+handle_call({close_conn, PoolId}, From, State) ->
+   with_next_conn(
+      PoolId, State,
+      fun(Conn, State1) ->
+         mysql_conn:close(Conn#conn.pid, From),
+         {noreply, State1}
+      end);
 
 handle_call(get_logfun, _From, State) ->
     {reply, {ok, State#state.log_fun}, State}.
