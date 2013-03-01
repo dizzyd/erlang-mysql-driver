@@ -149,7 +149,7 @@ start(Host, Port, User, Password, Database, LogFun, Encoding, PoolId) ->
 			init(Host, Port, User, Password, Database,
 			     LogFun, Encoding, PoolId, ConnPid)
 		end),
-    post_start(Pid, LogFun).
+    post_start(Pid).
 
 start_link(Host, Port, User, Password, Database, LogFun, Encoding, PoolId) ->
     ConnPid = self(),
@@ -157,28 +157,31 @@ start_link(Host, Port, User, Password, Database, LogFun, Encoding, PoolId) ->
 			     init(Host, Port, User, Password, Database,
 				  LogFun, Encoding, PoolId, ConnPid)
 		     end),
-    post_start(Pid, LogFun).
+    post_start(Pid).
 
 %% part of start/6 or start_link/6:
-post_start(Pid, LogFun) ->
+post_start(Pid) ->
     receive
 	{mysql_conn, Pid, ok} ->
 	    {ok, Pid};
 	{mysql_conn, Pid, {error, Reason}} ->
 	    {error, Reason};
-	{mysql_conn, OtherPid, {error, Reason}} ->
-	    % Ignore error message from other processes. This handles the case
-	    % when mysql is shutdown and takes more than 5 secs to close the
-	    % listener socket.
-	    ?Log2(LogFun, debug, "Ignoring message from process ~p | Reason: ~p",
-		  [OtherPid, Reason]),
-	    post_start(Pid, LogFun);
-	Unknown ->
-	    ?Log2(LogFun, error,
-		 "received unknown signal: ~p", [Unknown]),
-		 post_start(Pid, LogFun)
+	{'EXIT', Pid, Reason} ->
+	    {error, Reason}
     after 5000 ->
+	    %% same behavior as in proc_lib:sync_wait/2
+	    unlink(Pid),
+	    exit(Pid, kill),
+	    flush(Pid),
 	    {error, "timed out"}
+    end.
+
+flush(Pid) ->
+    receive
+	{'EXIT', Pid, _} ->
+	    true
+    after 0 ->
+	    true
     end.
 
 %%--------------------------------------------------------------------
