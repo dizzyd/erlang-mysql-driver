@@ -1,3 +1,4 @@
+%%% -*- coding: Latin-1 -*-
 %%%-------------------------------------------------------------------
 %%% File    : mysql_auth.erl
 %%% Author  : Fredrik Thulin <ft@it.su.se>
