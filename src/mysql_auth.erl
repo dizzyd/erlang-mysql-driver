@@ -7,7 +7,7 @@
 %%% Note    : All MySQL code was written by Magnus Ahltorp, originally
 %%%           in the file mysql.erl - I just moved it here.
 %%%
-%%% Copyright (c) 2001-2004 Kungliga Tekniska Högskolan
+%%% Copyright (c) 2001-2004 Kungliga Tekniska Hï¿½gskolan
 %%% See the file COPYING
 %%%
 %%%-------------------------------------------------------------------
@@ -175,11 +175,11 @@ bxor_binary(B1, B2) ->
 password_new([], _Salt) ->
     <<>>;
 password_new(Password, Salt) ->
-    Stage1 = crypto:sha(Password),
-    Stage2 = crypto:sha(Stage1),
-    Res = crypto:sha_final(
-	    crypto:sha_update(
-	      crypto:sha_update(crypto:sha_init(), Salt),
+    Stage1 = crypto:hash(sha, Password),
+    Stage2 = crypto:hash(sha, Stage1),
+    Res = crypto:hash_final(
+	    crypto:hash_update(
+	      crypto:hash_update(crypto:hash_init(sha), Salt),
 	      Stage2)
 	   ),
     bxor_binary(Res, Stage1).
