@@ -581,6 +581,11 @@ atom_to_binary(Val) ->
 %%--------------------------------------------------------------------
 mysql_init(Sock, RecvPid, User, Password, LogFun) ->
     case do_recv(LogFun, RecvPid, undefined) of
+	{ok, <<255:8, Rest/binary>>, _InitSeqNum} ->
+	    {Code, ErrData} = get_error_data(Rest, ?MYSQL_4_0),
+	    ?Log2(LogFun, error, "init error ~p: ~p",
+		  [Code, ErrData]),
+	    {error, ErrData};
 	{ok, Packet, InitSeqNum} ->
 	    {Version, Salt1, Salt2, Caps} = greeting(Packet, LogFun),
 	    AuthRes =
