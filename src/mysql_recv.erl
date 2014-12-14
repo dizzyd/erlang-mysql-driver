@@ -95,7 +95,7 @@ start_link(Host, Port, LogFun, Parent) when is_list(Host), is_integer(Port) ->
 %% Returns : error | never returns
 %%--------------------------------------------------------------------
 init(Host, Port, LogFun, Parent) ->
-    case gen_tcp:connect(Host, Port, [binary, {packet, 0}]) of
+    case gen_tcp:connect(Host, Port, [binary, {packet, 0}, {keepalive, true}]) of
 	{ok, Sock} ->
 	    Parent ! {mysql_recv, self(), init, {ok, Sock}},
 	    State = #state{socket  = Sock,
