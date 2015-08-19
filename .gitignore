@@ -4,3 +4,5 @@ erl_crash.dump
 ebin
 doc
 
+/.project
+/.settings/
