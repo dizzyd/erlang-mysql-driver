@@ -1,3 +1,4 @@
+%%% -*- coding: Latin-1 -*-
 %%% File    : mysql.erl
 %%% Author  : Magnus Ahltorp <ahltorp@nada.kth.se>
 %%% Descrip.: MySQL client.

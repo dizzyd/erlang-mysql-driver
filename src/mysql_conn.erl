@@ -1,3 +1,4 @@
+%%% -*- coding: Latin-1 -*-
 %%%-------------------------------------------------------------------
 %%% File    : mysql_conn.erl
 %%% Author  : Fredrik Thulin <ft@it.su.se>
@@ -16,7 +17,7 @@
 %%% Modified: 23 Sep 2006 by Yariv Sadan <yarivvv@gmail.com>
 %%% Added transaction handling and prepared statement execution.
 %%%
-%%% Copyright (c) 2001-2004 Kungliga Tekniska Hï¿½gskolan
+%%% Copyright (c) 2001-2004 Kungliga Tekniska Högskolan
 %%% See the file COPYING
 %%%
 %%%
