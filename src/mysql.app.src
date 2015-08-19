@@ -1,6 +1,6 @@
 {application, mysql,
  [{description, "MySQL Library"},
-  {vsn, "34"},
+  {vsn, "0.0.2"},
   {modules, [mysql,
              mysql_auth,
              mysql_conn,
