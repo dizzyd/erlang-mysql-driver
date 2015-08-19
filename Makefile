@@ -31,7 +31,7 @@ deps:
 ## dialyzer
 PLT_FILE = ~/mysql.plt
 PLT_APPS ?= kernel stdlib erts compiler runtime_tools syntax_tools crypto \
-		ssl public_key eunit xmerl inets asn1 hipe
+		mnesia ssl public_key eunit xmerl inets asn1 hipe
 DIALYZER_OPTS ?= -Werror_handling -Wrace_conditions -Wunmatched_returns \
 		-Wunderspecs --verbose --fullpath -n
 
