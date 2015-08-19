@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/ErlyORM/erlang-mysql-driver.svg)](https://travis-ci.org/ErlyORM/erlang-mysql-driver)
+
 Description: Revamped MySQL driver for Erlang
 Modified by: Yariv Sadan (yarivvv@gmail.com)
 
