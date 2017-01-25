@@ -18,14 +18,15 @@
 %% External exports (should only be used by the 'mysql_conn' module)
 %%--------------------------------------------------------------------
 -export([
-	 do_old_auth/7,
-	 do_new_auth/8
+	 do_old_auth/8,
+	 do_new_auth/9
 	]).
 
 %%--------------------------------------------------------------------
 %% Macros
 %%--------------------------------------------------------------------
 -define(LONG_PASSWORD, 1).
+-define(FOUND_ROWS, 2).
 -define(LONG_FLAG, 4).
 -define(PROTOCOL_41, 512).
 -define(TRANSACTIONS, 8192).
@@ -48,12 +49,13 @@
 %%           Password = string(), MySQL password
 %%           Salt1    = string(), salt 1 from server greeting
 %%           LogFun   = undefined | function() of arity 3
+%%           FoundRows= boolean(), sets FLAG_FOUND_ROWS capability
 %% Descrip.: Perform old-style MySQL authentication.
 %% Returns : result of mysql_conn:do_recv/3
 %%--------------------------------------------------------------------
-do_old_auth(Sock, RecvPid, SeqNum, User, Password, Salt1, LogFun) ->
+do_old_auth(Sock, RecvPid, SeqNum, User, Password, Salt1, LogFun, FoundRows) ->
     Auth = password_old(Password, Salt1),
-    Packet2 = make_auth(User, Auth),
+    Packet2 = make_auth(User, Auth, FoundRows),
     do_send(Sock, Packet2, SeqNum, LogFun),
     mysql_conn:do_recv(LogFun, RecvPid, SeqNum).
 
@@ -68,12 +70,14 @@ do_old_auth(Sock, RecvPid, SeqNum, User, Password, Salt1, LogFun) ->
 %%           Salt1    = string(), salt 1 from server greeting
 %%           Salt2    = string(), salt 2 from server greeting
 %%           LogFun   = undefined | function() of arity 3
+%%           FoundRows= boolean(), sets FLAG_FOUND_ROWS capability
 %% Descrip.: Perform MySQL authentication.
 %% Returns : result of mysql_conn:do_recv/3
 %%--------------------------------------------------------------------
-do_new_auth(Sock, RecvPid, SeqNum, User, Password, Salt1, Salt2, LogFun) ->
+do_new_auth(Sock, RecvPid, SeqNum, User, Password, Salt1, Salt2, LogFun,
+            FoundRows) ->
     Auth = password_new(Password, Salt1 ++ Salt2),
-    Packet2 = make_new_auth(User, Auth, none),
+    Packet2 = make_new_auth(User, Auth, none, FoundRows),
     do_send(Sock, Packet2, SeqNum, LogFun),
     case mysql_conn:do_recv(LogFun, RecvPid, SeqNum) of
 	{ok, Packet3, SeqNum2} ->
@@ -105,8 +109,14 @@ password_old(Password, Salt) ->
 			     end, L)).
 
 %% part of do_old_auth/4, which is part of mysql_init/4
-make_auth(User, Password) ->
-    Caps = ?LONG_PASSWORD bor ?LONG_FLAG bor ?TRANSACTIONS,
+make_auth(User, Password, FoundRows) ->
+    Caps0 = ?LONG_PASSWORD bor ?LONG_FLAG bor ?TRANSACTIONS,
+	Caps = case FoundRows of
+		true ->
+			Caps0 bor ?FOUND_ROWS;
+		_ ->
+			Caps0
+		end,
     Maxsize = 0,
     UserB = list_to_binary(User),
     PasswordB = Password,
@@ -114,12 +124,18 @@ make_auth(User, Password) ->
     PasswordB/binary>>.
 
 %% part of do_new_auth/4, which is part of mysql_init/4
-make_new_auth(User, Password, Database) ->
-    DBCaps = case Database of
+make_new_auth(User, Password, Database, FoundRows) ->
+    DBCaps0 = case Database of
 		 none ->
 		     0;
 		 _ ->
 		     ?CONNECT_WITH_DB
+	     end,
+    DBCaps = case FoundRows of
+		 true ->
+		     DBCaps0 bor ?FOUND_ROWS;
+		 _ ->
+		     DBCaps0
 	     end,
     Caps = ?LONG_PASSWORD bor ?LONG_FLAG bor ?TRANSACTIONS bor
 	?PROTOCOL_41 bor ?SECURE_CONNECTION bor DBCaps,
