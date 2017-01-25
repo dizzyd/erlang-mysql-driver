@@ -411,6 +411,8 @@ loop(State) ->
 	    ?Log2(LogFun, error,
 		  "received unknown signal, exiting: ~p", [Unknown]),
 	    error
+    after 5000 ->
+	    loop(State)
     end.
 
 %% GenSrvFrom is either a gen_server:call/3 From term(),

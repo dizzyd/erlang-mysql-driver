@@ -147,6 +147,8 @@ loop(State) ->
 		   end),
 	    State#state.parent ! {mysql_recv, self(), closed, normal},
 	    error
+    after 5000 ->
+	    loop(State)
     end.
 
 %%--------------------------------------------------------------------
