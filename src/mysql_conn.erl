@@ -88,6 +88,12 @@
 	]).
 
 %%--------------------------------------------------------------------
+%% Internal exports (should only be used by the module itself)
+%%--------------------------------------------------------------------
+-export([loop/1
+	]).
+
+%%--------------------------------------------------------------------
 %% External exports (should only be used by the 'mysql_auth' module)
 %%--------------------------------------------------------------------
 -export([do_recv/3
@@ -415,7 +421,7 @@ loop(State) ->
 		  "received unknown signal, exiting: ~p", [Unknown]),
 	    error
     after 5000 ->
-	    loop(State)
+	    ?MODULE:loop(State)
     end.
 
 %% GenSrvFrom is either a gen_server:call/3 From term(),
