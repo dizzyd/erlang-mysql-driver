@@ -73,6 +73,8 @@
 %%--------------------------------------------------------------------
 -export([start/8,
 	 start_link/8,
+    close/2,
+    close/3,
 	 fetch/3,
 	 fetch/4,
 	 execute/5,
@@ -218,6 +220,12 @@ flush(Pid) ->
 %%           Rows      = list() of [string()]
 %%           Reason    = term()
 %%--------------------------------------------------------------------
+close(Pid, From) ->
+   close(Pid, From, ?DEFAULT_STANDALONE_TIMEOUT).
+
+close(Pid, From, Timeout) ->
+   send_msg(Pid, {close, From}, From, Timeout).
+
 fetch(Pid, Queries, From) ->
     fetch(Pid, Queries, From, ?DEFAULT_STANDALONE_TIMEOUT).
 
@@ -385,6 +393,10 @@ loop(State) ->
     RecvPid = State#state.recv_pid,
     LogFun = State#state.log_fun,
     receive
+   {close, From} ->
+      ?Log2(LogFun, info,
+        "received close signal, exiting.", []),
+      send_reply(From, ok);
 	{fetch, Queries, From} ->
 	    send_reply(From, do_queries(State, Queries)),
 	    loop(State);

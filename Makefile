@@ -3,3 +3,6 @@ all:
 
 clean:
 	./rebar clean
+
+run:
+	erl -pa ./ebin
