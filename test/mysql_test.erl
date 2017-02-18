@@ -52,14 +52,24 @@ test() ->
     
     mysql:prepare(delete_all, <<"DELETE FROM developer">>),
 
-    {error, foo} = mysql:transaction(
-		     p1,
-		     fun() -> mysql:execute(delete_all),
-			      throw({error, foo})
-		     end),
+    {aborted, {{error, foo}, _}} =
+	mysql:transaction(
+	  p1,
+	  fun() -> mysql:execute(delete_all),
+	           throw({error, foo})
+	  end),
 
     Result4 = mysql:fetch(p1, <<"SELECT * FROM developer">>),
     io:format("Result4: ~p~n", [Result4]),
+
+    mysql:fetch(p1, <<"DELETE FROM numbers">>),
+    mysql:prepare(insert_number,
+		  <<"INSERT INTO numbers(name, _double) VALUES (?, ?)">>),
+    D = 1.0e-16,
+    mysql:execute(p1, insert_number, [<<"t1">>, D]),
+    Result5 = mysql:fetch(p1, <<"SELECT * FROM numbers WHERE name='t1'">>),
+    {data, {mysql_result, _, [[<<"t1">>, D]], _, _, _, _, _}} = Result5,
+    mysql:fetch(p1, <<"DELETE FROM numbers">>),
 				    
     ok.
     

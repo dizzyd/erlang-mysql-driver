@@ -943,10 +943,16 @@ convert_type(Val, ColType) ->
 	       T == 'NEWDECIMAL';
 	       T == 'FLOAT';
 	       T == 'DOUBLE' ->
-	    {ok, [Num], _Leftovers} =
+	    {ok, [Num], _Leftovers=[]} =
 		case io_lib:fread("~f", binary_to_list(Val)) of
 		    {error, _} ->
-			io_lib:fread("~d", binary_to_list(Val));
+			case io_lib:fread("~d", binary_to_list(Val)) of
+			    {ok, [_], []} = Res ->
+				Res;
+			    {ok, [X], E} ->
+				F = io_lib:format("~w~s~s" , [X, ".0", E]),
+				io_lib:fread("~f", lists:flatten(F))
+			end;
 		    Res ->
 			Res
 		end,
