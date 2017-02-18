@@ -72,7 +72,9 @@
 %% External exports
 %%--------------------------------------------------------------------
 -export([start/8,
+	 start/9,
 	 start_link/8,
+	 start_link/9,
 	 fetch/3,
 	 fetch/4,
 	 execute/5,
@@ -144,6 +146,7 @@
 %%           Password = string()
 %%           Database = string()
 %%           LogFun   = undefined | function() of arity 3
+%%           FoundRows= boolean(), sets FLAG_FOUND_ROWS capability
 %% Descrip.: Starts a mysql_conn process that connects to a MySQL
 %%           server, logs in and chooses a database.
 %% Returns : {ok, Pid} | {error, Reason}
@@ -151,18 +154,28 @@
 %%           Reason = string()
 %%--------------------------------------------------------------------
 start(Host, Port, User, Password, Database, LogFun, Encoding, PoolId) ->
+	start(Host, Port, User, Password, Database, LogFun, Encoding, PoolId,
+	      false).
+
+start(Host, Port, User, Password, Database, LogFun, Encoding, PoolId,
+      FoundRows) ->
     ConnPid = self(),
     Pid = spawn(fun () ->
 			init(Host, Port, User, Password, Database,
-			     LogFun, Encoding, PoolId, ConnPid)
+			     LogFun, Encoding, PoolId, ConnPid, FoundRows)
 		end),
     post_start(Pid).
 
 start_link(Host, Port, User, Password, Database, LogFun, Encoding, PoolId) ->
+	start_link(Host, Port, User, Password, Database, LogFun, Encoding,
+	           PoolId, false).
+
+start_link(Host, Port, User, Password, Database, LogFun, Encoding, PoolId,
+           FoundRows) ->
     ConnPid = self(),
     Pid = spawn_link(fun () ->
 			     init(Host, Port, User, Password, Database,
-				  LogFun, Encoding, PoolId, ConnPid)
+				  LogFun, Encoding, PoolId, ConnPid, FoundRows)
 		     end),
     post_start(Pid).
 
@@ -321,15 +334,17 @@ send_msg(Pid, Msg, From, Timeout) ->
 %%           Database = string()
 %%           LogFun   = function() of arity 4
 %%           Parent   = pid() of process starting this mysql_conn
+%%           FoundRows= boolean(), sets FLAG_FOUND_ROWS capability
 %% Descrip.: Connect to a MySQL server, log in and chooses a database.
 %%           Report result of this to Parent, and then enter loop() if
 %%           we were successfull.
 %% Returns : void() | does not return
 %%--------------------------------------------------------------------
-init(Host, Port, User, Password, Database, LogFun, Encoding, PoolId, Parent) ->
+init(Host, Port, User, Password, Database, LogFun, Encoding, PoolId, Parent,
+     FoundRows) ->
     case mysql_recv:start_link(Host, Port, LogFun, self()) of
 	{ok, RecvPid, Sock} ->
-	    case mysql_init(Sock, RecvPid, User, Password, LogFun) of
+	    case mysql_init(Sock, RecvPid, User, Password, LogFun, FoundRows) of
 		{ok, Version} ->
 		    Db = iolist_to_binary(Database),
 		    case do_query(Sock, RecvPid, LogFun,
@@ -587,11 +602,12 @@ atom_to_binary(Val) ->
 %%           User     = string()
 %%           Password = string()
 %%           LogFun   = undefined | function() with arity 3
+%%           FoundRows= boolean(), sets FLAG_FOUND_ROWS capability on connection
 %% Descrip.: Try to authenticate on our new socket.
 %% Returns : ok | {error, Reason}
 %%           Reason = string()
 %%--------------------------------------------------------------------
-mysql_init(Sock, RecvPid, User, Password, LogFun) ->
+mysql_init(Sock, RecvPid, User, Password, LogFun, FoundRows) ->
     case do_recv(LogFun, RecvPid, undefined) of
 	{ok, <<255:8, Rest/binary>>, _InitSeqNum} ->
 	    {Code, ErrData} = get_error_data(Rest, ?MYSQL_4_0),
@@ -605,11 +621,11 @@ mysql_init(Sock, RecvPid, User, Password, LogFun) ->
 		    ?SECURE_CONNECTION ->
 			mysql_auth:do_new_auth(
 			  Sock, RecvPid, InitSeqNum + 1,
-			  User, Password, Salt1, Salt2, LogFun);
+			  User, Password, Salt1, Salt2, LogFun, FoundRows);
 		    _ ->
 			mysql_auth:do_old_auth(
 			  Sock, RecvPid, InitSeqNum + 1, User, Password,
-			  Salt1, LogFun)
+			  Salt1, LogFun, FoundRows)
 		end,
 	    case AuthRes of
 		{ok, <<0:8, _Rest/binary>>, _RecvNum} ->
@@ -973,4 +989,3 @@ get_error_data(ErrPacket, ?MYSQL_4_0) ->
 get_error_data(ErrPacket, ?MYSQL_4_1) ->
     <<Code:16/little, _M:8, SqlState:5/binary, Message/binary>> = ErrPacket,
     {Code, {binary_to_list(SqlState), binary_to_list(Message)}}.
-    
