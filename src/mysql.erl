@@ -17,7 +17,7 @@
 %%% provide a simpler, Mnesia-style transaction interface. Also,
 %%% moved much of the prepared statement handling code to mysql_conn.erl
 %%% and added versioning to prepared statements.
-%%% 
+%%%
 %%%
 %%% Usage:
 %%%
@@ -65,7 +65,7 @@
 %%%          ErrSqlState   = mysql:get_result_err_sql_state(MysqlRes)
 %%%         with Reason and ErrSqlState = string()
 %%%          and ErrCode = integer()
-%%% 
+%%%
 %%% If you just want a single MySQL connection, or want to manage your
 %%% connections yourself, you can use the mysql_conn module as a
 %%% stand-alone single MySQL connection. See the comment at the top of
@@ -98,7 +98,7 @@
 	 fetch/1,
 	 fetch/2,
 	 fetch/3,
-	 
+
 	 prepare/2,
 	 execute/1,
 	 execute/2,
@@ -142,7 +142,7 @@
 
 -record(conn, {
 	  pool_id,      %% atom(), the pool's id
-	  pid,          %% pid(), mysql_conn process	 
+	  pid,          %% pid(), mysql_conn process
 	  reconnect,	%% true | false, should mysql_dispatcher try
                         %% to reconnect if this connection dies?
 	  host,		%% string()
@@ -156,15 +156,15 @@
 -record(state, {
 	  %% gb_tree mapping connection
 	  %% pool id to a connection pool tuple
-	  conn_pools = gb_trees:empty(), 
-	                
+	  conn_pools = gb_trees:empty(),
+
 
 	  %% gb_tree mapping connection Pid
 	  %% to pool id
-	  pids_pools = gb_trees:empty(), 
-	                                 
+	  pids_pools = gb_trees:empty(),
+
 	  %% function for logging,
-	  log_fun,	
+	  log_fun,
 
 
 	  %% maps names to {Statement::binary(), Version::integer()} values
@@ -187,7 +187,7 @@
 	LogFun(?MODULE,?LINE,Level,fun()-> {Msg,[]} end)).
 -define(Log2(LogFun,Level,Msg,Params),
 	LogFun(?MODULE,?LINE,Level,fun()-> {Msg,Params} end)).
-			     
+
 
 log(Module, Line, _Level, FormatFun) ->
     {Format, Arguments} = FormatFun(),
@@ -307,7 +307,7 @@ new_conn(PoolId, ConnPid, Reconnect, Host, Port, User, Password, Database,
 		  database = Database,
 		  encoding = Encoding
 		 };
-	false ->                        
+	false ->
 	    #conn{pool_id = PoolId,
 		  pid = ConnPid,
 		  reconnect = false}
@@ -333,7 +333,7 @@ fetch(Query) ->
 fetch(PoolId, Query) ->
     fetch(PoolId, Query, undefined).
 
-fetch(PoolId, Query, Timeout) -> 
+fetch(PoolId, Query, Timeout) ->
     case get(?STATE_VAR) of
 	undefined ->
 	    call_server({fetch, PoolId, Query}, Timeout);
@@ -471,7 +471,7 @@ get_result_field_info(#mysql_result{fieldinfo = FieldInfo}) ->
     FieldInfo.
 
 %% @doc Extract the Rows from MySQL Result on data received
-%% 
+%%
 %% @spec get_result_rows(MySQLRes::mysql_result()) -> [Row::list()]
 get_result_rows(#mysql_result{rows=AllRows}) ->
     AllRows.
@@ -645,7 +645,7 @@ handle_info({'DOWN', _MonitorRef, process, Pid, Info}, State) ->
 		  "received 'DOWN' signal from pid ~p not in my list", [Pid]),
 	    {noreply, State}
     end.
-    
+
 terminate(Reason, State) ->
     LogFun = State#state.log_fun,
     LogLevel = case Reason of
@@ -672,7 +672,7 @@ fetch_queries(PoolId, From, State, QueryList) ->
 
 with_next_conn(PoolId, State, Fun) ->
     case get_next_conn(PoolId, State) of
-	{ok, Conn, NewState} ->    
+	{ok, Conn, NewState} ->
 	    Fun(Conn, NewState);
 	error ->
 	    %% we have no active connection matching PoolId
@@ -691,7 +691,7 @@ add_conn(Conn, State) ->
     erlang:monitor(process, Conn#conn.pid),
     PoolId = Conn#conn.pool_id,
     ConnPools = State#state.conn_pools,
-    NewPool = 
+    NewPool =
 	case gb_trees:lookup(PoolId, ConnPools) of
 	    none ->
 		{[Conn],[]};
@@ -724,7 +724,7 @@ remove_pid_from_lists(Pid, Conns1, Conns2) ->
 	{NewConns1, Conn} ->
 	    {Conn, {NewConns1, Conns2}}
     end.
-    
+
 remove_conn(Pid, State) ->
     PidsPools = State#state.pids_pools,
     case gb_trees:lookup(Pid, PidsPools) of

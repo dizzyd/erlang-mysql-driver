@@ -7,4 +7,3 @@
              mysql_recv]},
   {registered, []},
   {applications, [kernel, stdlib]}]}.
-
