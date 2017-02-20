@@ -138,14 +138,18 @@
 %%====================================================================
 
 %%--------------------------------------------------------------------
-%% Function: start(Host, Port, User, Password, Database, LogFun)
-%% Function: start_link(Host, Port, User, Password, Database, LogFun)
+%% Function: start(Host, Port, User, Password, Database, LogFun,
+%%                 Encoding, PoolId, FoundRows) ->
+%% Function: start_link(Host, Port, User, Password, Database, LogFun,
+%%                      Encoding, PoolId, FoundRows)
 %%           Host     = string()
 %%           Port     = integer()
 %%           User     = string()
 %%           Password = string()
 %%           Database = string()
 %%           LogFun   = undefined | function() of arity 3
+%%           Encoding = atom()
+%%           PoolId   = atom()
 %%           FoundRows= boolean(), sets FLAG_FOUND_ROWS capability
 %% Descrip.: Starts a mysql_conn process that connects to a MySQL
 %%           server, logs in and chooses a database.
@@ -326,13 +330,15 @@ send_msg(Pid, Msg, From, Timeout) ->
 
 %%--------------------------------------------------------------------
 %% Function: init(Host, Port, User, Password, Database, LogFun,
-%%                Parent)
+%%                Encoding, PoolId, Parent, FoundRows)
 %%           Host     = string()
 %%           Port     = integer()
 %%           User     = string()
 %%           Password = string()
 %%           Database = string()
 %%           LogFun   = function() of arity 4
+%%           Encoding = atom()
+%%           PoolId   = atom()
 %%           Parent   = pid() of process starting this mysql_conn
 %%           FoundRows= boolean(), sets FLAG_FOUND_ROWS capability
 %% Descrip.: Connect to a MySQL server, log in and chooses a database.
