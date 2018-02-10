@@ -35,6 +35,12 @@
 -export([start_link/4
 	]).
 
+%%--------------------------------------------------------------------
+%% Internal exports (should only be used by the module itself)
+%%--------------------------------------------------------------------
+-export([loop/1
+	]).
+
 -record(state, {
 	  socket,
 	  parent,
@@ -147,6 +153,8 @@ loop(State) ->
 		   end),
 	    State#state.parent ! {mysql_recv, self(), closed, normal},
 	    error
+    after 5000 ->
+	    ?MODULE:loop(State)
     end.
 
 %%--------------------------------------------------------------------
