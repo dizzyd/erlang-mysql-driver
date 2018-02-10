@@ -3,6 +3,5 @@ erl_crash.dump
 .eunit
 ebin
 doc
-
 /.project
 /.settings/
