@@ -1,4 +1,4 @@
-%%% coding: latin-1
+%%% -*- coding: Latin-1 -*-
 %%%-------------------------------------------------------------------
 %%% File    : mysql_conn.erl
 %%% Author  : Fredrik Thulin <ft@it.su.se>
