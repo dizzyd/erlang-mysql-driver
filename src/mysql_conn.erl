@@ -17,7 +17,7 @@
 %%% Modified: 23 Sep 2006 by Yariv Sadan <yarivvv@gmail.com>
 %%% Added transaction handling and prepared statement execution.
 %%%
-%%% Copyright (c) 2001-2004 Kungliga Tekniska Högskolan
+%%% Copyright (c) 2001-2004 Kungliga Tekniska HÃ¶gskolan
 %%% See the file COPYING
 %%%
 %%%
@@ -467,6 +467,8 @@ do_query(Sock, RecvPid, LogFun, Query, Version) ->
 	    Msg = io_lib:format("Failed sending data "
 				"on socket : ~p",
 				[Reason]),
+	    gen_tcp:close(Sock),
+            RecvPid ! {tcp_closed, Sock},
 	    {error, Msg}
     end.
 
