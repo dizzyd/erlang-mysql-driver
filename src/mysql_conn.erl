@@ -467,8 +467,6 @@ do_query(Sock, RecvPid, LogFun, Query, Version) ->
 	    Msg = io_lib:format("Failed sending data "
 				"on socket : ~p",
 				[Reason]),
-	    gen_tcp:close(Sock),
-            RecvPid ! {tcp_closed, Sock},
 	    {error, Msg}
     end.
 
