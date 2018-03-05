@@ -10,7 +10,7 @@
 %%% Note    : All MySQL code was written by Magnus Ahltorp, originally
 %%%           in the file mysql.erl - I just moved it here.
 %%%
-%%% Copyright (c) 2001-2004 Kungliga Tekniska Högskolan
+%%% Copyright (c) 2001-2004 Kungliga Tekniska HÃ¶gskolan
 %%% See the file COPYING
 %%%
 %%%           Signals this receiver process can send to it's parent
@@ -75,6 +75,7 @@ start_link(Host, Port, LogFun, Parent) when is_list(Host), is_integer(Port) ->
 	spawn_link(fun () ->
 			   init(Host, Port, LogFun, Parent)
 		   end),
+	erlang:monitor(process, RecvPid),
     %% wait for the socket from the spawned pid
     receive
 	{mysql_recv, RecvPid, init, {error, E}} ->
