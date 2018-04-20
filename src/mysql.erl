@@ -539,7 +539,7 @@ init([PoolId, Host, Port, User, Password, Database, LogFun, Encoding]) ->
 		  password = Password,
 		  database = Database,
 		  encoding = Encoding},
-		  start_reconnect(C, LogFun),
+		  start_reconnect(C, LogFun1),
 	    {ok, #state{log_fun = LogFun1}}
     end.
 
