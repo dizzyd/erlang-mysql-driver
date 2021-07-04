@@ -8,7 +8,7 @@
 test() ->
     compile:file("/usr/local/lib/erlang/lib/mysql/mysql.erl"),
     compile:file("/usr/local/lib/erlang/lib/mysql/mysql_conn.erl"),
-    
+
     %% Start the MySQL dispatcher and create the first connection
     %% to the database. 'p1' is the connection pool identifier.
     mysql:start_link(p1, "localhost", "root", "password", "test"),
@@ -18,7 +18,7 @@ test() ->
 		  true),
     mysql:connect(p1, "localhost", undefined, "root", "password", "test",
 		  true),
-    
+
     mysql:fetch(p1, <<"DELETE FROM developer">>),
 
     mysql:fetch(p1, <<"INSERT INTO developer(name, country) VALUES "
@@ -28,17 +28,17 @@ test() ->
     %% Execute a query (using a binary)
     Result1 = mysql:fetch(p1, <<"SELECT * FROM developer">>),
     io:format("Result1: ~p~n", [Result1]),
-    
+
     %% Register a prepared statement
     mysql:prepare(update_developer_country,
 		  <<"UPDATE developer SET country=? where name like ?">>),
-    
+
     %% Execute the prepared statement
     mysql:execute(p1, update_developer_country, [<<"Sweden">>, <<"%Wiger">>]),
-    
+
     Result2 = mysql:fetch(p1, <<"SELECT * FROM developer">>),
     io:format("Result2: ~p~n", [Result2]),
-    
+
     mysql:transaction(
       p1,
       fun() -> mysql:fetch(<<"INSERT INTO developer(name, country) VALUES "
@@ -49,7 +49,7 @@ test() ->
 
     Result3 = mysql:fetch(p1, <<"SELECT * FROM developer">>),
     io:format("Result3: ~p~n", [Result3]),
-    
+
     mysql:prepare(delete_all, <<"DELETE FROM developer">>),
 
     {aborted, {{error, foo}, _}} =
@@ -70,7 +70,5 @@ test() ->
     Result5 = mysql:fetch(p1, <<"SELECT * FROM numbers WHERE name='t1'">>),
     {data, {mysql_result, _, [[<<"t1">>, D]], _, _, _, _, _}} = Result5,
     mysql:fetch(p1, <<"DELETE FROM numbers">>),
-				    
+
     ok.
-    
-    
